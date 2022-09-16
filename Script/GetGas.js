@@ -1,7 +1,6 @@
 //#region 全域引用
 const auth = require('../JSONHome/auth.json');
 const request = require('request');
-
 //#endregion
 
 //#region 宣告請求
@@ -14,7 +13,6 @@ const baseExcel = {
 
 //#region 傳送請求
 exports.getBaseExcel = function(callback) {
-    let backValue = new Array;
     request(baseExcel, function(error, response) {
         try {
             if (error) {
@@ -30,5 +28,30 @@ exports.getBaseExcel = function(callback) {
         }
     });
 };
+//#endregion
+//#region POST請求
+exports.requestPost=function(date,newWeight){
+    request.post(
+        auth.Gas.Get[0].baseExcel, 
+        {
+            form:{
+                "method": "write",
+                "date":date,
+                "newWeight":newWeight
+            }
+        },function(error, response){
+            try {
+                if (error) {
+                    console.log("錯誤1");
+                } else {
+                    //console.log(response); 
+                }
+            } catch (err) {
+                console.log("錯誤2",err);
+            }
+            
+        }
+    )
 
+};
 //#endregion

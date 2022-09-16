@@ -6,7 +6,6 @@
     const auth = require('./JSONHome/auth.json'); //之後想調用auth.json底下的資源，可以直接呼叫auth。
     const prefix = require('./JSONHome/prefix.json');//前綴字的統整
     const GetGas=require('./Script/GetGas');
-
     //存放BaseExcelAPI資料
     let BaseExcelData = false; 
 
@@ -23,8 +22,8 @@
             if (dataED) {
                 BaseExcelData = dataED //有資料
             }
-            console.log(`Logged in as ${client.user.tag}!`);
         })
+        console.log(`Logged in as ${client.user.tag}!`);
     });
     
 //#endregion
@@ -56,7 +55,7 @@ client.on('message',msg=>{
         switch (tempPrefix) {//由tempPrefix來分類前綴字
 
             case '0': //文字回應功能
-                BasicFunction(msg,tempPrefix);
+                TextReplyFunction(msg,tempPrefix);
                 break;
             case '1': //音樂指令
                 msg.channel.send('music');
@@ -75,6 +74,91 @@ client.on('message',msg=>{
 // 反過來說，如果我們宣告了msg1跟msg2兩個變數來接回傳值，因為discord.js的message事件並沒有給我們這麼多參數，所以msg2是接收不到東西的
 //#endregion
 
+//#region 子類方法
+
+//文字回復
+function TextReplyFunction(msg,tempPrefix){
+    const cmd = msg.content.substring(prefix[tempPrefix].Value.length).split(' '); //以空白分割前綴以後的字串(去掉驚嘆號，並將後面的訊息依空格分開，並存到cmd陣列中)
+        switch (cmd[0]) {//判斷接在驚嘆號後的第一個"詞"(也有可能是空格，ex:! xxx)
+            case 'help':
+                msg.channel.send('目前可以使用!help、!embed、@等指令');
+                break;
+            case '用msg.reply':
+                msg.reply('test');
+                break;
+            case '記錄體重':
+                let newWeight=cmd[1];
+                GetGas.requestPost(getDate(),newWeight);//將資料Post過去
+                newdataED=false;
+                setTimeout( () => {
+                    GetGas.getBaseExcel(function(newdataED) {
+                        if (newdataED) {
+                            BaseExcelData = newdataED //有資料
+                            let todayWeight,weightAvg7,weightAvg30;
+                            todayWeight=BaseExcelData[BaseExcelData.length-1].WEIGHT;
+                            weightAvg7=BaseExcelData[BaseExcelData.length-1].WEIGHT_AVG7;
+                            weightAvg30=BaseExcelData[BaseExcelData.length-1].WEIGHT_AVG30;
+                            msg.channel.send('今日體重:'+todayWeight+'kg\t近7日平均體重:'+weightAvg7+'kg\t近30日平均體重:'+weightAvg30+'kg');
+                        }
+                    })
+                }, 1000)
+                break;
+            case 'Melody':    
+                const melody = new Discord.MessageEmbed()
+                .setColor('#FFFF99')
+                .setTitle('你問農')
+                .addField('21歲', '性別:女', true)
+                .addField('興趣', '不知道', true)
+                .setTimestamp()
+                .setFooter('這樣可以ㄇ');
+                msg.channel.send(melody);
+                break;
+            case 'embed':
+                const embed = new Discord.MessageEmbed()
+                .setColor('#FFFF99')
+                .setTitle('測試Embed鑲嵌式訊息')
+                .setURL('https://discord.js.org/')
+                .setAuthor('李宗恩', 'https://i.imgur.com/wSTFkRM.png', 'https://discord.js.org')
+                .setDescription('這裡可以放描述...')
+                .setThumbnail('https://i.imgur.com/wSTFkRM.png')
+                .addField('Regular field title', 'Some value here')
+                .addField('\u200B', '\u200B')
+                .addField('Field標題', '可以放一些東西', true)
+                .addField('Field標題', '可以放一些東西', true)
+                .addField('Field標題', '可以放一些東西', true)
+                .setImage('https://i.imgur.com/wSTFkRM.png')
+                .setTimestamp()
+                .setFooter('這裡是Footer區', 'https://i.imgur.com/wSTFkRM.png');
+                msg.channel.send(embed);
+        }
+};
+function getDate(){
+    let date=new Date();
+    let todayYear=date.getFullYear();
+    let todayMonth=date.getMonth()+1;
+    let todayDay=date.getDate();
+    return todayYear+"/"+todayMonth+"/"+todayDay;
+};
+//對話資料庫系統
+function BaseExcelFunction(msg) {
+    const messageED = GetBaseExcelData(msg);
+    if (messageED) msg.channel.send(messageED);
+}   
+//BaseExcel字串比對
+function GetBaseExcelData(msg) {
+    try {
+        if (BaseExcelData) {  //BaseExcelData是JSON格式
+            console.log(BaseExcelData);
+            // const userMessage = msg.content;
+            // e = BaseExcelData.filter(element => element.WEIGHT === userMessage)
+            // if (e) return e[0].WEIGHT;
+            // else return false;
+        }
+    } catch (err) {
+        console.log('GetBaseExcelDataError', err);
+    }
+}
+//#endregion
 
 //#region 不知道錯哪邊區
 //抓刪 刪除事件
@@ -113,64 +197,37 @@ client.on('messageUpdate', function (oldMessage, newMessage) {
 })
 //#endregion
 
-//#region 子類方法
+// var sa = require('superagent');
+// sa.post(auth.Gas.Get[0].baseExcel)
+//   .send({"method": "write",
+//   name: "Wayne",
+//   sex: "male",
+//   remark: "測試寫入功能"})
+//   .end(function(err, res) {
+//     //TODO
+//   });
 
-//文字回復
-function BasicFunction(msg,tempPrefix){
-    const cmd = msg.content.substring(prefix[tempPrefix].Value.length).split(' '); //以空白分割前綴以後的字串(去掉驚嘆號，並將後面的訊息依空格分開，並存到cmd陣列中)
-                switch (cmd[0]) {//判斷接在驚嘆號後的第一個"詞"(也有可能是空格，ex:! xxx)
-                    case 'help':
-                        msg.channel.send('目前可以使用!help、!embed、@等指令');
-                        break;
-                    case '用msg.reply':
-                        msg.reply('test');
-                        break;
-                    case 'Melody':    
-                        const melody = new Discord.MessageEmbed()
-                        .setColor('#FFFF99')
-                        .setTitle('你問農')
-                        .addField('21歲', '性別:女', true)
-                        .addField('興趣', '不知道', true)
-                        .setTimestamp()
-                        .setFooter('這樣可以ㄇ');
-                        msg.channel.send(melody);
-                        break;
-                    case 'embed':
-                        const embed = new Discord.MessageEmbed()
-                        .setColor('#FFFF99')
-                        .setTitle('測試Embed鑲嵌式訊息')
-                        .setURL('https://discord.js.org/')
-                        .setAuthor('李宗恩', 'https://i.imgur.com/wSTFkRM.png', 'https://discord.js.org')
-                        .setDescription('這裡可以放描述...')
-                        .setThumbnail('https://i.imgur.com/wSTFkRM.png')
-                        .addField('Regular field title', 'Some value here')
-                        .addField('\u200B', '\u200B')
-                        .addField('Field標題', '可以放一些東西', true)
-                        .addField('Field標題', '可以放一些東西', true)
-                        .addField('Field標題', '可以放一些東西', true)
-                        .setImage('https://i.imgur.com/wSTFkRM.png')
-                        .setTimestamp()
-                        .setFooter('這裡是Footer區', 'https://i.imgur.com/wSTFkRM.png');
-                        msg.channel.send(embed);
-                }
-}
-//對話資料庫系統
-function BaseExcelFunction(msg) {
-    const messageED = GetBaseExcelData(msg);
-    if (messageED) msg.channel.send(messageED);
-}   
-//BaseExcel字串比對
-function GetBaseExcelData(msg) {
-    try {
-        if (BaseExcelData) {
-            console.log(BaseExcelData);
-            const userMessage = msg.content;
-            e = BaseExcelData.filter(element => element.NAME === userMessage)
-            if (e) return e[0].VALUE;
-            else return false;
-        }
-    } catch (err) {
-        console.log('GetBaseExcelDataError', err);
-    }
-}
-//#endregion
+//這段會失敗
+// const axios = require('axios')
+// axios
+//   .post(auth.Gas.Get[0].baseExcel, {
+//     "method": "write",
+//     "name": "Wayne",
+//   })
+//   .then(res => {
+//   })
+//   .catch(error => {
+//   })
+//這段會成功
+// const request = require("request");
+// const options = {
+//     url:auth.Gas.Get[0].baseExcel,
+//     method: 'POST',
+//     followAllRedirects: true,
+//     form:{
+//         "method": "write",
+//         "name": "Wayne",
+//     }
+// }
+// request(options,function(err, res, body){});
+
